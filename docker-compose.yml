@@ -1,0 +1,11 @@
+include:
+  # - composes/compose.argus.yaml
+  # - composes/compose.sisat.yaml
+  - composes/compose.infra.yaml
+  # - composes/compose.models.yaml
+  # - composes/compose.pipeline.cams.yaml
+
+
+networks:
+  ai_shop_assistant_network:
+    name: ai_shop_assistant_network

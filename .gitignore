@@ -1,0 +1,79 @@
+# =========================
+
+# Python
+
+# =========================
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# C extensions
+
+*.so
+
+# Distribution / packaging
+
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+
+venv/
+.env/
+.venv/
+env/
+ENV/
+
+# Python cache
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+
+*.log
+
+# =========================
+
+# IDE
+
+# =========================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+
+# Environment variables
+
+# =========================
+
+.env
+.env.*
+
+# =========================
+
+# Docker volumes / local data
+
+# =========================
+
+volumes/
+bvolumes/
+mongodb/data/
+qdrant/storage/
+
+# =========================
+
+# OS files
+
+# =========================
+
+.DS_Store
+Thumbs.db

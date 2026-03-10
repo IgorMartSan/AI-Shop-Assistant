@@ -1,0 +1,76 @@
+services:
+  # redis:
+  #   container_name: redis
+  #   image: redis:latest
+  #   restart: always
+  #   ports:
+  #     - "${GLOBAL_REDIS_PORT}:6379"
+  #   command: redis-server --maxmemory 50GB --maxmemory-policy allkeys-lru --save "" --appendonly no
+  #   networks:
+  #     - argus_network
+
+  # redis_insight:
+  #   image: redislabs/redisinsight:latest
+  #   container_name: redis_insight
+  #   restart: always
+  #   ports:
+  #     - "50030:5540"
+  #   volumes:
+  #     - ${PATH_REDIS_INSIGHT}:/db
+  #   networks:
+  #     - argus_network
+
+  # postgres:
+  #   image: postgres:15.2-alpine
+  #   restart: always
+  #   ports:
+  #     - "${GLOBAL_POSTGRES_PORT}:5432"
+  #   environment:
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     TZ: America/Sao_Paulo
+  #     PGDATA: /var/lib/postgresql/data/pgdata
+  #   command: postgres -c listen_addresses='*'
+  #   volumes:
+  #     - ${GLOBAL_PATH}/sisat_postgres:/var/lib/postgresql/data/pgdata
+  #   networks:
+  #     - ai_shop_assistant_network
+
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   restart: always
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@gmail.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #   ports:
+  #     - "${GLOBAL_PGADMIN_PORT}:80"
+  #   networks:
+  #     - ai_shop_assistant_network
+
+  # mariadb:
+  #   image: mariadb
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MARIADB_PASSWORD}
+  #     MYSQL_DATABASE: ${MARIADB_DB}
+  #   volumes:
+  #     - ${GLOBAL_PATH}/mariadb:/var/lib/mysql
+  #     - ../bulldog/argus_v2.sql:/docker-entrypoint-initdb.d/argus_v2.sql:ro
+  #   ports:
+  #     - "${GLOBAL_MARIADB_PORT}:3306"
+  #   networks:
+  #     - argus_network
+
+  # phpmyadmin:
+  #   container_name: phpmyadmin
+  #   image: phpmyadmin
+  #   restart: always
+  #   depends_on:
+  #     - mariadb
+  #   ports:
+  #     - "${GLOBAL_PHPMYADMIN_PORT}:80"
+  #   environment:
+  #     PMA_ARBITRARY: "1"
+  #   networks:
+  #     - argus_network
+
