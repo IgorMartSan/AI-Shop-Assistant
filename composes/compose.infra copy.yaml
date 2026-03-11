@@ -1,4 +1,4 @@
-services: {}
+services:
   # redis:
   #   container_name: redis
   #   image: redis:latest
@@ -73,3 +73,4 @@ services: {}
   #     PMA_ARBITRARY: "1"
   #   networks:
   #     - argus_network
+
