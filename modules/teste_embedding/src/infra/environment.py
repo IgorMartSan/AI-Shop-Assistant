@@ -6,6 +6,9 @@ load_dotenv()
 class Environment:
     def __init__(self):
         self.CONTAINER_NAME = os.getenv('CONTAINER_NAME', '')
+        self.EMBEDDING_API_BASE_URL = os.getenv('EMBEDDING_API_BASE_URL', 'http://127.0.0.1:8080')
+        self.QDRANT_URL = os.getenv('QDRANT_URL', 'http://127.0.0.1:6333')
+        self.QDRANT_COLLECTION_NAME = os.getenv('QDRANT_COLLECTION_NAME', 'products_embedding_test')
 
         self.WS_URL = 'ws://10.247.168.43:20004/ws/connect/send/CAM_SUP'
         

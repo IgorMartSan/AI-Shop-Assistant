@@ -2,24 +2,29 @@
 import time
 
 from infra.embedding_client import EmbeddingClient, EmbeddingClientError
+from infra.environment import Environment
 
-
-EMBEDDING_API_BASE_URL = "http://127.0.0.1:8080"
-INPUT_TEXT = "What is Deep Learning?"
+TEST_TEXT = """
+Deep learning is a field of machine learning that uses neural networks with many layers
+to learn patterns from text, images, audio, and other types of data.
+"""
 
 
 def main():
-    client = EmbeddingClient(base_url=EMBEDDING_API_BASE_URL)
+    env = Environment()
+    client = EmbeddingClient(base_url=env.EMBEDDING_API_BASE_URL)
 
     try:
         started_at = time.perf_counter()
-        embeddings = client.embed(INPUT_TEXT)
+        embedding = client.embed(TEST_TEXT.strip())
         elapsed_seconds = time.perf_counter() - started_at
     except EmbeddingClientError as exc:
         print(f"Falha ao gerar embedding: {exc}")
         raise
 
-    print(embeddings)
+    print(f"Texto: {TEST_TEXT.strip()}")
+    print(f"Dimensao do embedding: {len(embedding[0]) if embedding and isinstance(embedding[0], list) else len(embedding)}")
+    print(embedding)
     print(f"Tempo de execucao: {elapsed_seconds:.4f} segundos")
 
 

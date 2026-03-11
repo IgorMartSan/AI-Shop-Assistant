@@ -22,5 +22,5 @@ services:
       - ../volumes/qdrant/storage:/qdrant/storage
 
 networks:
-  default:
-    name: ecommerce-network
+  ai_shop_assistant_network:
+    name: ai_shop_assistant_network
