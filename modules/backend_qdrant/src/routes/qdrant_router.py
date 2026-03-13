@@ -14,9 +14,10 @@ from schemas.qdrant_schemas import (
     QdrantDeletePointResponse,
     QdrantGetPointRequest,
     QdrantGetPointResponse,
-    QdrantListAllPointsResponse,
     QdrantListCollectionsResponse,
     QdrantListPointsRequest,
+    QdrantListPointsPageRequest,
+    QdrantListPointsPageResponse,
     QdrantListPointsResponse,
     QdrantSearchRequest,
     QdrantSearchResponse,
@@ -232,9 +233,8 @@ def list_collection_points(
         description="Quantidade maxima de pontos retornados por pagina.",
         examples=[100],
     ),
-    offset: int | None = Query(
+    offset: str | int | None = Query(
         default=None,
-        ge=0,
         description="Offset de paginacao para continuar a leitura da collection.",
         examples=[0],
     ),
@@ -263,13 +263,13 @@ def list_collection_points(
 
 @router.get(
     "/points/{collection_name}",
-    response_model=QdrantListAllPointsResponse,
-    summary="Listar todos os pontos da collection",
+    response_model=QdrantListPointsPageResponse,
+    summary="Listar pontos com paginacao completa",
     description=(
-        "Busca todos os pontos de uma collection, percorrendo internamente todas "
-        "as paginas retornadas pelo Qdrant."
+        "Retorna uma pagina completa da collection com metadados de navegacao, "
+        "como total, total de paginas, pagina atual e indicadores de proxima/anterior."
     ),
-    response_description="Lista completa de pontos da collection.",
+    response_description="Pagina completa de pontos da collection.",
     responses=ERROR_RESPONSES,
 )
 def list_all_points(
@@ -278,12 +278,18 @@ def list_all_points(
         description="Nome da collection que sera listada.",
         examples=["products_embedding_test"],
     ),
+    page: int = Query(
+        default=1,
+        ge=1,
+        description="Numero da pagina desejada.",
+        examples=[1],
+    ),
     limit: int = Query(
-        default=100,
+        default=10,
         ge=1,
         le=1000,
-        description="Quantidade de pontos buscados por lote interno ate completar a collection.",
-        examples=[100],
+        description="Quantidade maxima de pontos por pagina.",
+        examples=[10],
     ),
     with_payload: bool = Query(
         default=True,
@@ -293,16 +299,22 @@ def list_all_points(
         default=False,
         description="Define se os vetores armazenados devem ser retornados.",
     ),
+    query: str | None = Query(
+        default=None,
+        description="Texto de busca aplicado sobre id, payload e demais dados do item antes da paginacao.",
+        examples=["notebook"],
+    ),
 ):
     try:
-        request = QdrantListPointsRequest(
+        request = QdrantListPointsPageRequest(
             collection_name=collection_name,
+            page=page,
             limit=limit,
-            offset=None,
             with_payload=with_payload,
             with_vector=with_vector,
+            query=query,
         )
-        result = QdrantUseCases.list_all_points(request)
+        result = QdrantUseCases.list_points_page(request)
         return result
     except QdrantRepositoryError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

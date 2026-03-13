@@ -9,6 +9,7 @@ from schemas.qdrant_schemas import (
     QdrantDeletePointRequest,
     QdrantGetPointRequest,
     QdrantListPointsRequest,
+    QdrantListPointsPageRequest,
     QdrantSearchRequest,
     QdrantUpdatePointRequest,
 )
@@ -99,4 +100,16 @@ class QdrantUseCases:
             batch_limit=request_data.limit,
             with_payload=request_data.with_payload,
             with_vector=request_data.with_vector,
+        )
+
+    @staticmethod
+    def list_points_page(request_data: QdrantListPointsPageRequest):
+        repository = QdrantRepository()
+        return repository.list_points_page(
+            collection_name=request_data.collection_name,
+            page=request_data.page,
+            limit=request_data.limit,
+            with_payload=request_data.with_payload,
+            with_vector=request_data.with_vector,
+            query=request_data.query,
         )

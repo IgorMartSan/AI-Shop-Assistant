@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 import os
+import json
 
 from dotenv import load_dotenv
 import requests
@@ -148,22 +149,22 @@ class QdrantRepository:
         self,
         collection_name: str,
         limit: int = 100,
-        offset: Optional[int] = None,
+        offset: Optional[str | int] = None,
         with_payload: bool = True,
         with_vector: bool = False,
     ) -> dict[str, Any]:
-        params = {
+        payload: dict[str, Any] = {
             "limit": limit,
             "with_payload": with_payload,
             "with_vector": with_vector,
         }
         if offset is not None:
-            params["offset"] = offset
+            payload["offset"] = offset
 
         response = self._request(
-            "GET",
-            f"/collections/{collection_name}/points",
-            params=params,
+            "POST",
+            f"/collections/{collection_name}/points/scroll",
+            json=payload,
         )
         result = response.get("result", {})
         if not isinstance(result, dict):
@@ -191,7 +192,7 @@ class QdrantRepository:
         with_vector: bool = False,
     ) -> dict[str, Any]:
         all_points: list[dict[str, Any]] = []
-        next_offset: Optional[int] = None
+        next_offset: Optional[str | int] = None
 
         while True:
             page = self.list_points(
@@ -216,6 +217,61 @@ class QdrantRepository:
             "result": all_points,
             "total": len(all_points),
         }
+
+    def list_points_page(
+        self,
+        collection_name: str,
+        page: int = 1,
+        limit: int = 10,
+        with_payload: bool = True,
+        with_vector: bool = False,
+        query: str | None = None,
+    ) -> dict[str, Any]:
+        all_points_response = self.list_all_points(
+            collection_name=collection_name,
+            batch_limit=limit,
+            with_payload=with_payload,
+            with_vector=with_vector,
+        )
+        all_points = all_points_response.get("result", [])
+        total = all_points_response.get("total", 0)
+
+        if not isinstance(all_points, list):
+            raise QdrantRepositoryError(
+                "Qdrant returned an unexpected payload for full pagination"
+            )
+
+        filtered_points = all_points
+        normalized_query = (query or "").strip().lower()
+        if normalized_query:
+            filtered_points = [
+                point
+                for point in all_points
+                if normalized_query in self._build_searchable_text(point)
+            ]
+
+        total = len(filtered_points)
+        start = (page - 1) * limit
+        end = start + limit
+        total_pages = max(1, (total + limit - 1) // limit) if total else 1
+
+        return {
+            "result": filtered_points[start:end],
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "total_pages": total_pages,
+            "has_previous": page > 1,
+            "has_next": page < total_pages,
+            "previous_page": page - 1 if page > 1 else None,
+            "next_page": page + 1 if page < total_pages else None,
+        }
+
+    def _build_searchable_text(self, point: dict[str, Any]) -> str:
+        payload_text = json.dumps(point.get("payload", {}), ensure_ascii=False, default=str)
+        vector_text = json.dumps(point.get("vector", []), ensure_ascii=False, default=str)
+        point_id = str(point.get("id", ""))
+        return f"{point_id} {payload_text} {vector_text}".lower()
 
     def _request(self, method: str, path: str, **kwargs: Any) -> Any:
         url = f"{self._base_url}{path}"

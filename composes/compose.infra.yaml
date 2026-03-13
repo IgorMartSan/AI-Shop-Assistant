@@ -23,7 +23,8 @@ services:
     volumes:
       - ../volumes/mongodb/data:/data/db
       - ./config/mongodb/init:/docker-entrypoint-initdb.d
-
+    networks:
+      - ai_shop_assistant_network
   qdrant:
     image: qdrant/qdrant:latest
     restart: unless-stopped
@@ -32,7 +33,8 @@ services:
       - "6334:6334"
     volumes:
       - ../volumes/qdrant/storage:/qdrant/storage
-
+    networks:
+      - ai_shop_assistant_network
   # redis:
   #   container_name: redis
   #   image: redis:latest
@@ -107,3 +109,8 @@ services:
   #     PMA_ARBITRARY: "1"
   #   networks:
   #     - argus_network
+
+
+networks:
+  ai_shop_assistant_network:
+    name: ai_shop_assistant_network

@@ -1,6 +1,21 @@
 
 services:
 
+  # frontend_shop_assistant:
+  #   build:
+  #     context: ../modules/frontend_shop_assistant
+  #     dockerfile: Dockerfile
+  #   container_name: frontend_shop_assistant
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     NEXT_PUBLIC_API_URL: http://192.168.15.14:8010
+  #   depends_on:
+  #     - backend_qdrant
+  #   networks:
+  #     - ai_shop_assistant_network
+
   backend_qdrant:
     build:
       context: ../modules/backend_qdrant

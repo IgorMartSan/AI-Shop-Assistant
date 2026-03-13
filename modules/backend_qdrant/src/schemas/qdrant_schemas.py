@@ -224,9 +224,8 @@ class QdrantListPointsRequest(BaseModel):
         description="Quantidade maxima de pontos retornados por pagina.",
         examples=[100],
     )
-    offset: Optional[int] = Field(
+    offset: Optional[str | int] = Field(
         default=None,
-        ge=0,
         description="Offset numerico para paginacao da listagem.",
         examples=[0],
     )
@@ -244,9 +243,52 @@ class QdrantListPointsRequest(BaseModel):
 
 class QdrantListPointsResponse(BaseModel):
     result: list[dict[str, Any]]
-    next_page_offset: Optional[int]
+    next_page_offset: Optional[str | int]
 
 
-class QdrantListAllPointsResponse(BaseModel):
+class QdrantListPointsPageRequest(BaseModel):
+    collection_name: str = Field(
+        ...,
+        min_length=1,
+        description="Nome da collection que sera listada.",
+    )
+    page: int = Field(
+        default=1,
+        ge=1,
+        description="Numero da pagina solicitada.",
+        examples=[1],
+    )
+    limit: int = Field(
+        default=10,
+        ge=1,
+        le=1000,
+        description="Quantidade maxima de pontos por pagina.",
+        examples=[10],
+    )
+    with_payload: bool = Field(
+        default=True,
+        description="Inclui o payload de cada ponto na resposta.",
+        examples=[True],
+    )
+    with_vector: bool = Field(
+        default=False,
+        description="Inclui o vetor armazenado de cada ponto na resposta.",
+        examples=[False],
+    )
+    query: Optional[str] = Field(
+        default=None,
+        description="Texto de busca aplicado sobre os dados concatenados do item antes da paginacao.",
+        examples=["notebook"],
+    )
+
+
+class QdrantListPointsPageResponse(BaseModel):
     result: list[dict[str, Any]]
+    page: int
+    limit: int
     total: int
+    total_pages: int
+    has_previous: bool
+    has_next: bool
+    previous_page: Optional[int]
+    next_page: Optional[int]
