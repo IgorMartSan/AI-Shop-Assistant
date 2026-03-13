@@ -12,6 +12,18 @@ services:
   #     - ../volumes/mongodb/data:/data/db
   #     - ./config/mongodb/init:/docker-entrypoint-initdb.d
 
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - ../volumes/mongodb/data:/data/db
+      - ./config/mongodb/init:/docker-entrypoint-initdb.d
+
   qdrant:
     image: qdrant/qdrant:latest
     restart: unless-stopped
@@ -20,10 +32,6 @@ services:
       - "6334:6334"
     volumes:
       - ../volumes/qdrant/storage:/qdrant/storage
-
-networks:
-  ai_shop_assistant_network:
-    name: ai_shop_assistant_network
 
   # redis:
   #   container_name: redis
