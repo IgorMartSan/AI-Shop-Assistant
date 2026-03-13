@@ -4,6 +4,7 @@ include:
   # - composes/compose.sisat.yaml
   - composes/compose.infra.yaml
   - composes/compose.infra.embeddings.yaml
+  - composes/compose.backend_qdrant.yaml
   # - composes/compose.pipeline.cams.yaml
   
 networks:

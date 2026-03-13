@@ -1,0 +1,28 @@
+services:
+  backend_qdrant:
+    build:
+      context: ../modules/backend_qdrant
+      dockerfile: dockerfile
+    container_name: backend_qdrant
+    restart: unless-stopped
+    ports:
+      - "8010:8010"
+    environment:
+      CONTAINER_NAME: backend_qdrant
+
+      QDRANT_URL: http://qdrant:6333
+      GLOBAL_RATE_LIMIT: 20/second
+      LOG_DIR: /code/logs
+      SHOW_LOG: "true"
+      LOG_ERROR_MODE: full
+
+    volumes:
+      - ../volumes/backend_qdrant/logs:/code/logs
+    depends_on:
+      - qdrant
+    networks:
+      - ai_shop_assistant_network
+
+networks:
+  ai_shop_assistant_network:
+    name: ai_shop_assistant_network

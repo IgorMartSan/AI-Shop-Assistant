@@ -23,9 +23,14 @@ class EmbeddingClient:
         self._timeout = float(timeout_sec)
         self._session = session or requests.Session()
 
+
+
+
     def embed(self, inputs: str | list[str]) -> list[Any]:
         payload = {"inputs": inputs}
         return self._request("POST", "/embed", json=payload)
+
+
 
     def _request(self, method: str, path: str, **kwargs: Any) -> Any:
         url = f"{self._base_url}{path}"
