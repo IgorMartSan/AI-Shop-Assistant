@@ -14,8 +14,9 @@ services:
       - BAAI/bge-m3
     gpus: all
     restart: unless-stopped
+    networks:
+      - ai_shop_assistant_network
 
 networks:
   ai_shop_assistant_network:
     name: ai_shop_assistant_network
-

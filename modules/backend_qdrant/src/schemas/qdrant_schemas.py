@@ -67,13 +67,34 @@ class PointPayload(BaseModel):
     pass
 
 
-class QdrantPoint(BaseModel):
-    id: str | int = Field(..., description="ID unico do ponto.", examples=[101])
-    vector: list[float] = Field(
+class EmbeddingRequest(BaseModel):
+    inputs: str | list[str] = Field(
         ...,
+        min_length=1,
+        description="Texto ou lista de textos enviados para o servico de embedding.",
+        examples=["Notebook com RTX 4060 e 16 GB de RAM"],
+    )
+
+
+class QdrantPoint(BaseModel):
+    id: Optional[str | int] = Field(
+        default=None,
+        description="ID unico do ponto. Se nao informado, sera gerado automaticamente.",
+        examples=["b8f6a9c3-0f20-4bf7-9d2e-3dcbf53db19e"],
+    )
+    vector: Optional[list[float]] = Field(
+        default=None,
         min_length=1,
         description="Vetor de embedding armazenado no Qdrant.",
         examples=[[0.12, -0.45, 0.91, 0.07]],
+    )
+    embedding_input: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        description=(
+            "Texto enviado ao servico de embedding quando `vector` nao for informado."
+        ),
+        examples=["Notebook com RTX 4060 e 16 GB de RAM"],
     )
     payload: Optional[dict[str, Any]] = Field(
         default=None,
@@ -101,8 +122,7 @@ class QdrantCreatePointRequest(BaseModel):
                 "collection_name": "products_embedding_test",
                 "points": [
                     {
-                        "id": 101,
-                        "vector": [0.12, -0.45, 0.91, 0.07],
+                        "embedding_input": "Notebook Dell categoria informatica",
                         "payload": {
                             "name": "Notebook Dell",
                             "category": "informatica",

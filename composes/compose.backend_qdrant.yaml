@@ -1,6 +1,0 @@
-services:
-
-
-networks:
-  ai_shop_assistant_network:
-    name: ai_shop_assistant_network

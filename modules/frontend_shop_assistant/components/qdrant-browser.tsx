@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import {
+  RiAddLine,
   RiDeleteBinLine,
   RiDatabase2Line,
   RiEditLine,
@@ -99,6 +100,11 @@ type MutationResponse = {
   status?: string
 }
 
+type PayloadField = {
+  key: string
+  value: string
+}
+
 const PAGE_SIZE = 10
 
 export function QdrantBrowser({ apiUrl }: QdrantBrowserProps) {
@@ -120,6 +126,11 @@ export function QdrantBrowser({ apiUrl }: QdrantBrowserProps) {
   const [connectionOk, setConnectionOk] = useState<boolean | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [reloadKey, setReloadKey] = useState(0)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createName, setCreateName] = useState("")
+  const [createCategory, setCreateCategory] = useState("")
+  const [createDescription, setCreateDescription] = useState("")
+  const [createExtraFields, setCreateExtraFields] = useState<PayloadField[]>([])
   const [editOpen, setEditOpen] = useState(false)
   const [editingPoint, setEditingPoint] = useState<PointRecord | null>(null)
   const [payloadText, setPayloadText] = useState("{}")
@@ -328,6 +339,101 @@ export function QdrantBrowser({ apiUrl }: QdrantBrowserProps) {
     setItemsError(null)
     setActionMessage(null)
     setEditOpen(true)
+  }
+
+  function openCreateDialog() {
+    setCreateName("")
+    setCreateCategory("")
+    setCreateDescription("")
+    setCreateExtraFields([])
+    setItemsError(null)
+    setActionMessage(null)
+    setCreateOpen(true)
+  }
+
+  function addCreatePayloadField() {
+    setCreateExtraFields((current) => [...current, { key: "", value: "" }])
+  }
+
+  function updateCreatePayloadField(index: number, field: "key" | "value", value: string) {
+    setCreateExtraFields((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      )
+    )
+  }
+
+  function removeCreatePayloadField(index: number) {
+    setCreateExtraFields((current) => current.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  async function handleCreatePoint() {
+    if (!selectedCollection) {
+      return
+    }
+
+    setSavingPoint(true)
+    setItemsError(null)
+    setActionMessage(null)
+
+    try {
+      const payload: Record<string, unknown> = {}
+
+      if (!createDescription.trim()) {
+        throw new Error("Informe a description do item.")
+      }
+
+      if (createName.trim()) {
+        payload.name = createName.trim()
+      }
+
+      if (createCategory.trim()) {
+        payload.category = createCategory.trim()
+      }
+
+      if (createDescription.trim()) {
+        payload.description = createDescription.trim()
+      }
+
+      for (const field of createExtraFields) {
+        const key = field.key.trim()
+        if (!key) {
+          throw new Error("Preencha a chave dos campos extras ou remova a linha vazia.")
+        }
+        payload[key] = field.value.trim()
+      }
+
+      const body = {
+        collection_name: selectedCollection,
+        points: [
+          {
+            embedding_input: createDescription.trim(),
+            payload,
+          },
+        ],
+      }
+
+      const response = await fetch(`${apiUrl}/qdrant/points`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.detail ?? "Nao foi possivel criar o item.")
+      }
+
+      const data = (await response.json()) as MutationResponse
+      setActionMessage(data.status ?? "Item criado com sucesso.")
+      setCreateOpen(false)
+      setCurrentPage(1)
+      setReloadKey((current) => current + 1)
+    } catch (err) {
+      setItemsError(err instanceof Error ? err.message : "Erro ao criar o item.")
+    } finally {
+      setSavingPoint(false)
+    }
   }
 
   async function handleUpdatePoint() {
@@ -553,6 +659,110 @@ export function QdrantBrowser({ apiUrl }: QdrantBrowserProps) {
                 Mostrando ate {PAGE_SIZE} registros por pagina. Total de itens: {totalItems}.
               </p>
               <div className="flex items-center gap-2">
+                <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" onClick={openCreateDialog}>
+                      <RiAddLine />
+                      criar item
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Criar item em {selectedCollection}</DialogTitle>
+                      <DialogDescription>
+                        Informe os dados do ponto. O backend gera o embedding a partir do texto enviado.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Payload</p>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground">Name</p>
+                            <Input
+                              value={createName}
+                              onChange={(event) => setCreateName(event.target.value)}
+                              placeholder="Notebook Dell"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground">Category</p>
+                            <Input
+                              value={createCategory}
+                              onChange={(event) => setCreateCategory(event.target.value)}
+                              placeholder="informatica"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            Description
+                          </p>
+                          <Textarea
+                            value={createDescription}
+                            onChange={(event) => setCreateDescription(event.target.value)}
+                            className="min-h-24"
+                            placeholder="Notebook com RTX 4060 e SSD de 1TB"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Esse mesmo texto sera usado para gerar o embedding.
+                          </p>
+                        </div>
+                        <div className="space-y-3 rounded-2xl border p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-medium">Campos extras</p>
+                            <Button type="button" variant="outline" size="sm" onClick={addCreatePayloadField}>
+                              <RiAddLine />
+                              add campo
+                            </Button>
+                          </div>
+                          {createExtraFields.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">
+                              Nenhum campo extra adicionado.
+                            </p>
+                          ) : null}
+                          {createExtraFields.map((field, index) => (
+                            <div key={index} className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                              <Input
+                                value={field.key}
+                                onChange={(event) =>
+                                  updateCreatePayloadField(index, "key", event.target.value)
+                                }
+                                placeholder="key"
+                              />
+                              <Input
+                                value={field.value}
+                                onChange={(event) =>
+                                  updateCreatePayloadField(index, "value", event.target.value)
+                                }
+                                placeholder="value"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeCreatePayloadField(index)}
+                              >
+                                remover
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        O ID e gerado automaticamente como UUID no momento da criacao.
+                      </p>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setCreateOpen(false)}>
+                        cancelar
+                      </Button>
+                      <Button onClick={handleCreatePoint} disabled={savingPoint}>
+                        {savingPoint ? "criando..." : "criar"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
                 <Button
                   variant="outline"
                   size="sm"

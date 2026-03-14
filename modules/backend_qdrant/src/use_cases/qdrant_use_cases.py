@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 from typing import Optional
+from uuid import uuid4
 
-from repositories.qdrant_repository import QdrantRepository
+from repositories.embedding_repository import (
+    EmbeddingRepository,
+    EmbeddingRepositoryError,
+)
+from repositories.qdrant_repository import QdrantRepository, QdrantRepositoryError
 from schemas.qdrant_schemas import (
+    EmbeddingRequest,
     QdrantBatchDeleteRequest,
     QdrantCreatePointRequest,
     QdrantDeletePointRequest,
@@ -16,6 +22,12 @@ from schemas.qdrant_schemas import (
 
 
 class QdrantUseCases:
+    @staticmethod
+    def _normalize_embedding(payload: list[float] | list[list[float]]) -> list[float]:
+        if payload and isinstance(payload[0], list):
+            return payload[0]
+        return payload  # type: ignore[return-value]
+
     @staticmethod
     def list_collections():
         repository = QdrantRepository()
@@ -33,19 +45,44 @@ class QdrantUseCases:
 
     @staticmethod
     def create_points(request_data: QdrantCreatePointRequest):
-        repository = QdrantRepository()
-        points = [
-            {
-                "id": point.id,
-                "vector": point.vector,
-                "payload": point.payload,
-            }
-            for point in request_data.points
+        qdrant_repository = QdrantRepository()
+        embedding_repository = EmbeddingRepository()
+        missing_embeddings = [
+            str(point.id) if point.id is not None else f"index {index}"
+            for index, point in enumerate(request_data.points, start=1)
+            if point.vector is None and not point.embedding_input
         ]
-        return repository.create_points(
-            collection_name=request_data.collection_name,
-            points=points,
-        )
+        if missing_embeddings:
+            raise QdrantRepositoryError(
+                "Each point must provide `vector` or `embedding_input`. "
+                f"Missing for point ids: {', '.join(missing_embeddings)}"
+            )
+
+        try:
+            points = []
+            for point in request_data.points:
+                vector = point.vector
+                if vector is None:
+                    vector = QdrantUseCases._normalize_embedding(
+                        embedding_repository.embed(
+                            EmbeddingRequest(inputs=point.embedding_input or "")
+                        )
+                    )
+
+                points.append(
+                    {
+                        "id": point.id if point.id is not None else str(uuid4()),
+                        "vector": vector,
+                        "payload": point.payload,
+                    }
+                )
+
+            return qdrant_repository.create_points(
+                collection_name=request_data.collection_name,
+                points=points,
+            )
+        except EmbeddingRepositoryError as exc:
+            raise QdrantRepositoryError(str(exc)) from exc
 
     @staticmethod
     def get_point(request_data: QdrantGetPointRequest):

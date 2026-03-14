@@ -27,6 +27,7 @@ services:
     environment:
       CONTAINER_NAME: backend_qdrant
 
+      EMBEDDING_API_BASE_URL: http://bge_m3:80
       QDRANT_URL: http://qdrant:6333
       GLOBAL_RATE_LIMIT: 20/second
       LOG_DIR: /code/logs
