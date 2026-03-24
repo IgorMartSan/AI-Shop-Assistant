@@ -1,6 +1,27 @@
 
 services:
 
+
+  message-aggregator:
+    build:
+      context: .
+      dockerfile: modules/message-aggregator-service/Dockerfile
+    container_name: message-aggregator
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../volumes/logs:/code/logs
+    environment:
+      - REDIS_HOST=redis
+      - MONGO_URI=mongodb://mongo:27017
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - ai_shop_assistant_network
+
+
+
   # frontend_shop_assistant:
   #   build:
   #     context: ../modules/frontend_shop_assistant

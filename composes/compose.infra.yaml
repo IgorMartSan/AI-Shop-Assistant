@@ -25,6 +25,7 @@ services:
       - ./config/mongodb/init:/docker-entrypoint-initdb.d
     networks:
       - ai_shop_assistant_network
+
   qdrant:
     image: qdrant/qdrant:latest
     restart: unless-stopped
@@ -35,15 +36,24 @@ services:
       - ../volumes/qdrant/storage:/qdrant/storage
     networks:
       - ai_shop_assistant_network
-  # redis:
-  #   container_name: redis
-  #   image: redis:latest
-  #   restart: always
-  #   ports:
-  #     - "${GLOBAL_REDIS_PORT}:6379"
-  #   command: redis-server --maxmemory 50GB --maxmemory-policy allkeys-lru --save "" --appendonly no
-  #   networks:
-  #     - argus_network
+
+redis:
+  container_name: redis
+  image: redis:latest
+  restart: always
+  ports:
+    - "${GLOBAL_REDIS_PORT}:6379"
+  command: redis-server --maxmemory 50GB --maxmemory-policy allkeys-lru --save "" --appendonly no
+
+  healthcheck:
+    test: ["CMD", "redis-cli", "ping"]
+    interval: 5s
+    timeout: 3s
+    retries: 5
+    start_period: 5s
+
+  networks:
+    - ai_shop_assistant_network
 
   # redis_insight:
   #   image: redislabs/redisinsight:latest

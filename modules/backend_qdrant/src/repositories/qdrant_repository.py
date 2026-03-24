@@ -81,7 +81,12 @@ class QdrantRepository:
             f"/collections/{collection_name}/points",
             json=payload,
         )
-        return response
+        result = response.get("result")
+        if not isinstance(result, dict):
+            raise QdrantRepositoryError(
+                "Qdrant returned an unexpected payload for point creation"
+            )
+        return result
 
     def get_point(
         self,
