@@ -4,8 +4,8 @@ services:
 
   message-aggregator:
     build:
-      context: .
-      dockerfile: modules/message-aggregator-service/Dockerfile
+      context: ../modules/message-aggregator-service
+      dockerfile: Dockerfile
     container_name: message-aggregator
     ports:
       - "8000:8000"

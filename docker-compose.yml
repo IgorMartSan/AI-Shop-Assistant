@@ -3,7 +3,7 @@ include:
   # - composes/compose.argus.yaml
   # - composes/compose.sisat.yaml
   - composes/compose.infra.yaml
-  - composes/compose.infra.embeddings.yaml
+  # - composes/compose.infra.embeddings.yaml
   - composes/compose.modules.yaml
   # - composes/compose.pipeline.cams.yaml
   
