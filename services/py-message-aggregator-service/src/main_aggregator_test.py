@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 from infra.redis.connection import RedisConnection
 from infra.redis.repository import ChatBufferRepository
 
+
+
+
 from time import sleep
 
 load_dotenv()
@@ -13,7 +16,12 @@ def main() -> None:
         port=int(os.getenv("REDIS_PORT", 6379)),
         db=int(os.getenv("REDIS_DB", 0)),
     )
+
+
     repo = ChatBufferRepository(redis_conn)
+
+
+
     print("Aguardando...")
     cont = 0
     while True:
@@ -25,8 +33,15 @@ def main() -> None:
             repo.add_message(user_id, "Quero pagar um boleto")
             sleep(1)
             repo.add_message(user_id, "vence hoje?")
-            sleep(70)
+            
             cont += 1
+            user_id = cont
+            print(f"Adicionando mensagens para user_id={user_id}")
+            # simulando mensagens
+            repo.add_message(user_id, "Bom dia")
+            cont += 1
+
+            sleep(20)
 
 
 if __name__ == "__main__":
