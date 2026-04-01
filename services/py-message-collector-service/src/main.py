@@ -11,6 +11,7 @@ from infra.mongo.connection import MongoConnection
 from infra.mongo.longtermrepository import LongTermRepository
 from infra.mongo.shorttermrepository import ShortTermRepository
 
+
 load_dotenv()
 
 setup_logger(
@@ -89,8 +90,8 @@ def main() -> None:
         )
 
         mongo_repo_longterm = LongTermRepository(mongo_conn)
-        mongo_repo_shortterm = ShortTermRepository(mongo_conn)
 
+        mongo_repo_shortterm = ShortTermRepository(mongo_conn)
 
         while True:
             items = redis_repo_chatbuffer.collect_ready(
@@ -148,7 +149,6 @@ def main() -> None:
                             client_id=client_id,
                             limit=20,
                         )
-
 
 
                         long_term_payload = {

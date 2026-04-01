@@ -20,8 +20,6 @@ services:
     networks:
       - ai_shop_assistant_network
 
-
-
   # frontend_shop_assistant:
   #   build:
   #     context: ../modules/frontend_shop_assistant
