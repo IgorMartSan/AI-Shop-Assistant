@@ -2,23 +2,23 @@
 services:
 
 
-  message-aggregator:
-    build:
-      context: ../modules/message-aggregator-service
-      dockerfile: Dockerfile
-    container_name: message-aggregator
-    ports:
-      - "8000:8000"
-    volumes:
-      - ../volumes/logs:/code/logs
-    environment:
-      - REDIS_HOST=redis
-      - MONGO_URI=mongodb://mongo:27017
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - ai_shop_assistant_network
+  # message-aggregator:
+  #   build:
+  #     context: ../services/py-message-aggregator-service
+  #     dockerfile: Dockerfile
+  #   container_name: message-aggregator
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ../volumes/logs:/code/logs
+  #   environment:
+  #     - REDIS_HOST=redis
+  #     - MONGO_URI=mongodb://admin:admin@mongodb:27017/?authSource=admin
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #   networks:
+  #     - ai_shop_assistant_network
 
   # frontend_shop_assistant:
   #   build:
@@ -37,7 +37,7 @@ services:
 
   backend_qdrant:
     build:
-      context: ../modules/backend_qdrant
+      context: ../services/backend_qdrant
       dockerfile: dockerfile
     container_name: backend_qdrant
     restart: unless-stopped

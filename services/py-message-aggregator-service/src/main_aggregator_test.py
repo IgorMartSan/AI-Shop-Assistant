@@ -28,20 +28,32 @@ def main() -> None:
             user_id = cont
             print(f"Adicionando mensagens para user_id={user_id}")
             # simulando mensagens
+            print(f"Enviando para {user_id}: Oi")
             repo.add_message(user_id, "Oi")
-            sleep(1)
-            repo.add_message(user_id, "Quero pagar um boleto")
-            sleep(1)
-            repo.add_message(user_id, "vence hoje?")
+            sleep(15)
+            print(f"Enviando para {user_id}: Vocês têm notebook?")
+            repo.add_message(user_id, "Vocês têm notebook?")
+            sleep(15)
+            print(f"Enviando para {user_id}: Qual o valor?")
+            repo.add_message(user_id, "Qual o valor?")
             
             cont += 1
             user_id = cont
             print(f"Adicionando mensagens para user_id={user_id}")
             # simulando mensagens
+            print(f"Enviando para {user_id}: Bom dia")
             repo.add_message(user_id, "Bom dia")
+            sleep(15)
+            print(f"Enviando para {user_id}: Tem notebook disponível?")
+            repo.add_message(user_id, "Tem notebook disponível?")
+            sleep(15)
+            print(f"Enviando para {user_id}: Qual a faixa de preço?")
+            repo.add_message(user_id, "Qual a faixa de preço?")
             cont += 1
+            sleep(60)
 
-            sleep(20)
+
+            
 
 
 if __name__ == "__main__":

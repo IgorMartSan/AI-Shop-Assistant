@@ -48,6 +48,6 @@ class MongoConnection:
 
     def get_database(self) -> Database:
         """Retorna o database ativo."""
-        if not self._database:
+        if self._database is None:
             raise RuntimeError("MongoDB não está conectado")
         return self._database

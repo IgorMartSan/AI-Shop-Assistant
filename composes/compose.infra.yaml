@@ -41,7 +41,7 @@ services:
     image: redis:latest
     restart: always
     ports:
-      - "${GLOBAL_REDIS_PORT}:6379"
+      - "6379:6379"
     command: redis-server --maxmemory 50GB --maxmemory-policy allkeys-lru --save "" --appendonly no
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
