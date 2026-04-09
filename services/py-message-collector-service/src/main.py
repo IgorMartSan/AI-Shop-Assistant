@@ -106,9 +106,13 @@ def main() -> None:
                 user_id = item["user_id"]
                 messages = item["messages"]
                 lock_token = item["lock_token"]
+
                 client_id = build_client_id(platform, user_id)
 
                 try:
+
+
+                    
                     print(f"Processando user_id={user_id}: {messages}")
 
                     current_long_term_context = mongo_repo_longterm.get(client_id)

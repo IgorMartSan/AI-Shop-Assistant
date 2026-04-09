@@ -1,5 +1,5 @@
 [project]
-name = "py-message-collector-service"
+name = "py-exemples-lang-graph"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -9,8 +9,6 @@ dependencies = [
     "infra",
     "config",
     "langgraph>=1.1.4",
-    "langchain>=1.2.15",
-    "langchain-groq>=1.1.2",
 ]
 
 [tool.uv.sources]
