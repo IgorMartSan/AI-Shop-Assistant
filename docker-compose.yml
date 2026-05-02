@@ -2,10 +2,13 @@
 include:
   # - composes/compose.argus.yaml
   # - composes/compose.sisat.yaml
-  - composes/compose.infra.yaml
+  #3- composes/compose.infra.yaml
   # - composes/compose.infra.embeddings.yaml
-  - composes/compose.modules.yaml
-  # - composes/compose.pipeline.cams.yaml
+  #- composes/compose.modules.yaml
+  #- composes/compose-langfuse/langfuse.yaml
+  # Project N8N
+   - composes/compose-n8n/docker-compose.yaml
+  #- composes/compose-models-llm-embedding/compose.models.llm.yaml
   
 networks:
   ai_shop_assistant_network:

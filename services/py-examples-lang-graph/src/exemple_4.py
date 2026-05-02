@@ -1,54 +1,96 @@
-
+from typing import Annotated
 from pydantic import BaseModel
-from langgraph.graph import StateGraph, START, END, add_messages
-from langchain_core.messages import HumanMessage
-from langchain.chat_models import init_chat_model
 from dotenv import load_dotenv
-import os
+
+from langgraph.graph import StateGraph
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode
+
+from langchain.chat_models import init_chat_model
+from langchain.tools import tool
+from langchain_core.messages import BaseMessage, HumanMessage
 
 load_dotenv()
 
-llm = init_chat_model(    
-    model="allam-2-7b",
-    model_provider="groq",
-    temperature=0,)
+
+class SomaInput(BaseModel):
+    a: int
+    b: int
 
 
-#3 - Definir o StateGraph - onde vamos adicionar os nodes e definir as transições entre eles.
+@tool(args_schema=SomaInput)
+def somar(a: int, b: int) -> int:
+    """Soma dois números."""
+    return a + b
+
+
+tools = [somar]
+
 
 class GraphState(BaseModel):
-    input: str
-    output: str
+    messages: Annotated[list[BaseMessage], 3]
 
 
-# 4 - Criar o grafo e adicionar os nodes e as transições entre eles.
+llm = init_chat_model(
+    model="qwen/qwen3-32b",
+    model_provider="groq",
+    temperature=0,
+)
 
-def node_call_llm(state):
-    input_message = state.input
-    response = llm.invoke([HumanMessage(content=input_message)])
-    return GraphState(input=input_message, output=response.content)
+llm_with_tools = llm.bind_tools(tools)
 
-# 5 Criando o graph
+
+def call_model(state: GraphState):
+    response = llm_with_tools.invoke(state.messages)
+    return {"messages": [response]}
+
+
+def should_continue(state: GraphState):
+    last_message = state.messages[-1]
+
+    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+        return "tools"
+
+    return "end"
+
+
 graph = StateGraph(GraphState)
-graph.add_node("call_llm", node_call_llm)
 
-graph.set_entry_point("call_llm")
-graph.set_finish_point("call_llm")
+graph.add_node("call_model", call_model)
+graph.add_node("tools", ToolNode(tools))
 
-# 6 - Compilar o grafo
+graph.set_entry_point("call_model")
+
+graph.add_conditional_edges(
+    "call_model",
+    should_continue,
+    {
+        "tools": "tools",
+        "end": "__end__",
+    },
+)
+
+graph.add_edge("tools", "call_model")
+
 compiled_graph = graph.compile()
 
+
 if __name__ == "__main__":
-    # 7 - Invocar o grafo com um estado inicial
-    result = compiled_graph.invoke(GraphState(input="Olá, como vai?", output=""))
-    print("Graph result:", result)
+    result = compiled_graph.invoke(
+        {
+            "messages": [HumanMessage(content="Quanto é 2 + 3?")]
+        }
+    )
 
-    #Visualizar o grafo
-    drawable = compiled_graph.get_graph()
-    # Mermaid texto
-    print(drawable.draw_mermaid())
+    messages = result["messages"]
 
-    png_data = drawable.draw_mermaid_png()
-    with open("./graph_visualization.png", "wb") as f:
-        f.write(png_data)
-  
+    for msg in messages:
+        print("TIPO:", type(msg).__name__)
+        print("CONTENT:", msg.content)
+        if hasattr(msg, "tool_calls"):
+            print("TOOL_CALLS:", msg.tool_calls)
+        print("-" * 50)
+
+    last_message = messages[-1]
+    print("RESPOSTA FINAL DA LLM:")
+    print(last_message.content)
