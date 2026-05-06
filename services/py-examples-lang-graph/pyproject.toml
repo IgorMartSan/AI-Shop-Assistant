@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "python-dotenv>=1.2.2",
+    "psycopg[binary]>=3.3.3",
     "infra",
     "config",
     "langgraph>=1.1.4",
@@ -19,5 +20,4 @@ dependencies = [
 [tool.uv.sources]
 infra = { path = "../../packages/infra", editable = true }
 config = { path = "../../packages/config", editable = true }
-
 

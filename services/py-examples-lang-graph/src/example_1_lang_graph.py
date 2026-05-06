@@ -41,3 +41,11 @@ graph_compiled = builder.compile()
 
 
 graph_compiled.invoke({ "user_id": "123", "massages": ["Ola", "Tudo bem ?"] })
+
+drawable = graph_compiled.get_graph()
+
+with open("graph.mmd", "w", encoding="utf-8") as file:
+    file.write(drawable.draw_mermaid())
+
+with open("graph.png", "wb") as file:
+    file.write(drawable.draw_mermaid_png())
