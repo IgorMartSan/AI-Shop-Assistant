@@ -1,19 +1,22 @@
 # main.py
 
-from typing import Annotated, TypedDict, Literal
+from typing import Annotated, TypedDict
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import START, StateGraph, END
 from langgraph.graph.message import add_messages
-from langgraph.checkpoint.memory import InMemorySaver
+
 from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.store.postgres import PostgresStore
+from psycopg_pool import ConnectionPool
+
 from langchain.chat_models import init_chat_model
 from prompts.sql_agent_prompt import system_message
-
 
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
 POSTGRES_HOST_TEST = os.getenv("POSTGRES_HOST_TEST", "localhost")
 POSTGRES_PORT_TEST = int(os.getenv("POSTGRES_PORT_TEST", "5432"))
 POSTGRES_USER_TEST = os.getenv("POSTGRES_USER_TEST", "postgres")
@@ -25,41 +28,53 @@ connection_string = (
     f"@{POSTGRES_HOST_TEST}:{POSTGRES_PORT_TEST}/{POSTGRES_DB_TEST}"
 )
 
-
-model = init_chat_model(
-    model="meta-llama/llama-4-scout-17b-16e-instruct",
-    model_provider="groq",
-    temperature=0,
+# Pool de conexões PostgreSQL
+pool = ConnectionPool(
+    conninfo=connection_string,
+    min_size=1,
+    max_size=10,
+    kwargs={
+        "autocommit": True,
+        "prepare_threshold": 0,
+    },
 )
+
+# SHORT MEMORY
+checkpointer = PostgresSaver(pool)
+checkpointer.setup()
+
+# LONG MEMORY
+store = PostgresStore(pool)
+store.setup()
 
 
 llm = init_chat_model(
-    model="meta-llama/llama-4-scout-17b-16e-instruct",
-    model_provider="groq",
+    model="llama3.2",
+    model_provider="ollama",
+    base_url="http://localhost:11434",
     temperature=0,
 )
 
 
-#State
+# State
 class ChatState(TypedDict):
     messages: Annotated[list, add_messages]
 
-#Nodes
 
+# Nodes
 def limit_checkpoint_size(state: ChatState):
     messages = state["messages"]
 
-    numMessages = -10
+    num_messages = -10
 
     system_messages = [m for m in messages if m.type == "system"]
     other_messages = [m for m in messages if m.type != "system"]
 
-    limited_messages = system_messages + other_messages[numMessages:]
+    limited_messages = system_messages + other_messages[num_messages:]
 
     return {
         "messages": limited_messages
     }
-
 
 
 class RouteDecision(TypedDict):
@@ -69,12 +84,10 @@ class RouteDecision(TypedDict):
 router_llm = llm.with_structured_output(RouteDecision)
 
 
-
-
 def decide_next_node(state: ChatState):
     msg = state["messages"][-1].content
 
-    allowed_nodes = ["chat_node", "sql_node"]
+    allowed_nodes = ["A", "B"]
 
     try:
         decision: RouteDecision = router_llm.invoke([
@@ -83,29 +96,36 @@ def decide_next_node(state: ChatState):
 
                 Escolha exatamente um dos nodes abaixo:
 
-                - chat_node → conversa normal
-                - sql_node → perguntas sobre SQL, banco, tabelas, colunas ou dados
+                - A → conversa normal
+                - B → perguntas sobre SQL, banco, tabelas, colunas ou dados
 
                 Responda apenas com o campo next_node.
                 O valor deve ser exatamente um destes:
                 {", ".join(allowed_nodes)}
-                """),
+            """),
             HumanMessage(content=msg)
         ])
 
         next_node = decision["next_node"].strip()
 
-        # 🔥 VALIDAÇÃO (ESSENCIAL)
         if next_node in allowed_nodes:
             return next_node
 
-        # fallback se vier errado
-        return "chat_node"
+        return "A"
 
     except Exception:
-        return "chat_node"
+        return "A"
+
 
 def call_model(state: ChatState):
+    response = llm.invoke(state["messages"])
+
+    return {
+        "messages": [response]
+    }
+
+
+def sql_node(state: ChatState):
     response = llm.invoke(state["messages"])
 
     return {
@@ -117,47 +137,69 @@ def call_model(state: ChatState):
 
 
 
+# Build 
 
 def build_graph():
     graph = StateGraph(ChatState)
 
-    graph.add_node("call_model", call_model)
     graph.add_node("limit_checkpoint_size", limit_checkpoint_size)
+    graph.add_node("call_model", call_model)
+    graph.add_node("sql_node", sql_node)
+
+
+
     graph.add_edge(START, "limit_checkpoint_size")
-    graph.add_edge("limit_checkpoint_size", "call_model")
+
+    graph.add_conditional_edges("limit_checkpoint_size",
+        decide_next_node,
+        {
+            "A": "call_model",
+            "B": "sql_node",
+        }
+    )
+
     graph.add_edge("call_model", END)
+
+    graph.add_edge("sql_node", END)
+
 
     return graph
 
 
 graph = build_graph()
 
-with PostgresSaver.from_conn_string(connection_string) as checkpointerPostgres:
-    checkpointerPostgres.setup()
-    app = graph.compile(checkpointer=checkpointerPostgres)
+app = graph.compile(
+    checkpointer=checkpointer,
+    store=store,
+)
 
 
-    user_id = "1"
-    config = {
-        "configurable": {
-            "thread_id": f"user:{user_id}"
-        }
+
+
+user_id = "1"
+
+config = {
+    "configurable": {
+        "thread_id": f"user:{user_id}",
+        "user_id": user_id,
     }
+}
 
 
-    app.invoke(
-        {
-            "messages": [
+app.invoke(
+    {
+        "messages": [
             system_message,
             HumanMessage(content="Quais são as tabelas disponíveis no banco de dados?")
-            ]
-        },
-        config=config
-    )
+        ]
+    },
+    config=config
+)
 
 
-    print("Chat iniciado. Digite 'sair' para encerrar.\n")
+print("Chat iniciado. Digite 'sair' para encerrar.\n")
 
+try:
     while True:
         user_input = input("Você: ")
 
@@ -178,8 +220,8 @@ with PostgresSaver.from_conn_string(connection_string) as checkpointerPostgres:
         messages = state.values.get("messages", [])
 
         print("Quantidade de mensagens:", len(messages))
-
         print("IA:", result["messages"][-1].content)
-
-        
         print()
+
+finally:
+    pool.close()

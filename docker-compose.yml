@@ -7,7 +7,7 @@ include:
   #- composes/compose.modules.yaml
   #- composes/compose-langfuse/langfuse.yaml
   # Project N8N
-   - composes/compose-n8n/docker-compose.yaml
+   - composes/compose-agent/compose.agent.infra.yaml
   #- composes/compose-models-llm-embedding/compose.models.llm.yaml
   
 networks:

@@ -93,6 +93,23 @@ services:
     networks:
       - ai_shop_assistant_network
 
+
+
+  postgres-vector:
+    image: pgvector/pgvector:pg17
+    container_name: postgres-vector
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-vector-data:/var/lib/postgresql/data
+
+
+
+
   # mariadb:
   #   image: mariadb
   #   environment:
